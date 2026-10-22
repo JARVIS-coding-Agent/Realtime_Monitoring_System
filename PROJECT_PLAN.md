@@ -10,11 +10,11 @@
 
 | # | 交付項目 | 對應檔案/位置 | 狀態 |
 |---|----------|--------------|:----:|
-| 1 | **完整的專案代碼（上傳至 GitHub）** | 整個 `Q2_Realtime_Monitoring_System/` 專案 repo | ☐ |
-| 2 | **README.md**（內容見下方子項） | `README.md` | ☐ |
-| 3 | **.env.example 文件** | `.env.example` | ☐ |
-| 4 | **至少一個測試資料的 CSV 範例** | `docs/sample_data.csv`（批量導入用範例） | ☐ |
-| 5 | **系統架構圖** | `docs/architecture.png` | ☐ |
+| 1 | **完整的專案代碼（上傳至 GitHub）** | 整個 `Q2_Realtime_Monitoring_System/` 專案 repo | ☑ |
+| 2 | **README.md**（內容見下方子項） | `README.md` | ☑ |
+| 3 | **.env.example 文件** | `.env.example` | ☑ |
+| 4 | **至少一個測試資料的 CSV 範例** | `docs/sample_data.csv`（批量導入用範例） | ☑ |
+| 5 | **系統架構圖** | `docs/architecture.md` | ☑ |
 
 ### README.md 必須包含（但不限於）
 - [ ] **專案介紹** — 系統目標、功能概述、五大模組摘要
@@ -205,7 +205,7 @@ Q2_Realtime_Monitoring_System/
 ├── .env.example
 ├── docker-compose.yml
 ├── docs/
-│   ├── architecture.png            # 系統架構圖
+│   ├── architecture.md            # 系統架構圖
 │   └── sample_data.csv             # 測試資料 CSV 範例
 ├── backend/
 │   ├── Dockerfile                  # 多階段構建
@@ -315,7 +315,7 @@ docker-compose up --build
 | README.md | 介紹/技術棧/本地運行/Docker 指令/API 文件連結/測試帳號 |
 | .env.example | `.env.example` |
 | 測試資料 CSV 範例 | `docs/sample_data.csv` |
-| 系統架構圖 | `docs/architecture.png` |
+| 系統架構圖 | `docs/architecture.md` |
 | Swagger 文件 | `http://localhost:8000/docs` |
 | JWT 認證 | `core/security.py` + `api/routers/auth.py` |
 | SQLAlchemy ORM（禁原生 SQL） | `models/` + `db/session.py`（全程 ORM） |

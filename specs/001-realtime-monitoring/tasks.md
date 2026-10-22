@@ -187,14 +187,14 @@
 
 **Purpose**：對應 US1–US6 的前端呈現（FR-014/027、UX Consistency）
 
-- [ ] T056 [P] 實作 `frontend/app/state.py`（session_state 管理 token/role/登入狀態）per research.md §8
-- [ ] T057 實作 `frontend/app/api_client.py`（httpx 帶 Bearer token 呼叫 REST；處理 401 導回登入）
-- [ ] T058 [P] 實作 `frontend/app/ws_client.py`（websocket-client 連線 /ws/realtime 接收推送）
-- [ ] T059 實作 `frontend/app/Home.py`（登入/登出頁，寫入 session，過期處理）對應 US1
-- [ ] T060 [P] 實作 `frontend/app/pages/2_📋_資料管理.py`（CRUD、分頁/篩選/排序、批量導入 UI）對應 US2/US5
-- [ ] T061 [P] 實作 `frontend/app/pages/1_📊_即時監控.py`（WS 即時 plotly 折線/柱狀圖，異常紅色標記，時區 Asia/Taipei，ISO 8601）對應 US3
-- [ ] T062 [P] 實作 `frontend/app/pages/3_📈_資料分析.py`（stats/aggregate/trend 圖表 + Excel 下載）對應 US4
-- [ ] T063 [P] 實作 `frontend/app/pages/4_⚙️_系統管理.py`（使用者列表/角色管理/日誌/DB 狀態/即時歷史，僅 Admin 可見）對應 US6
+- [X] T056 [P] 實作 `frontend/app/state.py`（session_state 管理 token/role/登入狀態）per research.md §8
+- [X] T057 實作 `frontend/app/api_client.py`（httpx 帶 Bearer token 呼叫 REST；處理 401 導回登入）
+- [X] T058 [P] 實作 `frontend/app/ws_client.py`（websocket-client 連線 /ws/realtime 接收推送）
+- [X] T059 實作 `frontend/app/Home.py`（登入/登出頁，寫入 session，過期處理）對應 US1
+- [X] T060 [P] 實作 `frontend/app/pages/2_📋_資料管理.py`（CRUD、分頁/篩選/排序、批量導入 UI）對應 US2/US5
+- [X] T061 [P] 實作 `frontend/app/pages/1_📊_即時監控.py`（WS 即時 plotly 折線/柱狀圖，異常紅色標記，時區 Asia/Taipei，ISO 8601）對應 US3
+- [X] T062 [P] 實作 `frontend/app/pages/3_📈_資料分析.py`（stats/aggregate/trend 圖表 + Excel 下載）對應 US4
+- [X] T063 [P] 實作 `frontend/app/pages/4_⚙️_系統管理.py`（使用者列表/角色管理/日誌/DB 狀態/即時歷史，僅 Admin 可見）對應 US6
 
 **Checkpoint**：前端五頁對應全部故事，端到端可操作
 

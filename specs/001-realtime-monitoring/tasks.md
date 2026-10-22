@@ -169,15 +169,15 @@
 
 ### Tests for User Story 6 ⚠️
 
-- [ ] T050 [P] [US6] 契約/整合測試 admin 於 `backend/app/tests/test_admin.py`（users 列表、變更角色生效、最後 Admin 409、非 Admin 403、logs/db-status 查詢）per contracts/admin.md
+- [X] T050 [P] [US6] 契約/整合測試 admin 於 `backend/app/tests/test_admin.py`（users 列表、變更角色生效、最後 Admin 409、非 Admin 403、logs/db-status 查詢）per contracts/admin.md
 
 ### Implementation for User Story 6
 
-- [ ] T051 [US6] 實作 `backend/app/models/system_log.py`（SystemLog ORM：id PK；level str(20) not null index；message text not null；user_id FK→user.id nullable index；endpoint str(255) nullable；created_at datetime(UTC) not null default=now index）per data-model.md
-- [ ] T052 [US6] 建立 Alembic 遷移（system_logs 資料表）
-- [ ] T053 [P] [US6] 實作 `backend/app/schemas/admin.py`（UserRoleUpdate、SystemLogOut、DbStatusOut）per contracts/admin.md
-- [ ] T054 [US6] 實作 `backend/app/api/routers/admin.py`（GET /users；PUT /users/{id}/role 禁降級/停用最後一位啟用 Admin 回 409；GET /logs 篩選；GET /db-status 連接池指標）掛載至 main.py，全端點 require_role admin per contracts/admin.md、FR-020~024
-- [ ] T055 [US6] 導入中介層/依賴記錄系統日誌（endpoint、user、level）供 Admin 查詢 per FR-025
+- [X] T051 [US6] 實作 `backend/app/models/system_log.py`（SystemLog ORM：id PK；level str(20) not null index；message text not null；user_id FK→user.id nullable index；endpoint str(255) nullable；created_at datetime(UTC) not null default=now index）per data-model.md
+- [X] T052 [US6] 建立 Alembic 遷移（system_logs 資料表）
+- [X] T053 [P] [US6] 實作 `backend/app/schemas/admin.py`（UserRoleUpdate、SystemLogOut、DbStatusOut）per contracts/admin.md
+- [X] T054 [US6] 實作 `backend/app/api/routers/admin.py`（GET /users；PUT /users/{id}/role 禁降級/停用最後一位啟用 Admin 回 409；GET /logs 篩選；GET /db-status 連接池指標）掛載至 main.py，全端點 require_role admin per contracts/admin.md、FR-020~024
+- [X] T055 [US6] 導入中介層/依賴記錄系統日誌（endpoint、user、level）供 Admin 查詢 per FR-025
 
 **Checkpoint**：所有六個使用者故事皆可獨立運作（後端完成）
 

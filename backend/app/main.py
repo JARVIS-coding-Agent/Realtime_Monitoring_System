@@ -47,6 +47,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 系統日誌中介層（記錄變更類請求供 Admin 稽核）
+from app.core.middleware import SystemLogMiddleware  # noqa: E402
+
+app.add_middleware(SystemLogMiddleware)
+
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:

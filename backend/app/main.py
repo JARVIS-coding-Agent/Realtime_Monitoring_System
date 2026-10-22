@@ -16,14 +16,18 @@ async def lifespan(app: FastAPI):
     setup_logging()
     logger.info("服務啟動中…")
     await wait_for_db()
-    # 背景任務（即時資料生成器、保留清理）於後續階段註冊
-    _background = getattr(app.state, "background_startup", None)
-    if _background is not None:
-        await _background()
+    # 啟動即時資料生成器背景任務
+    try:
+        from app.services.generator import generator
+        await generator.start()
+    except Exception as exc:
+        logger.error(f"背景任務啟動失敗：{exc}")
     yield
-    _shutdown = getattr(app.state, "background_shutdown", None)
-    if _shutdown is not None:
-        await _shutdown()
+    try:
+        from app.services.generator import generator
+        await generator.stop()
+    except Exception:
+        pass
     await engine.dispose()
     logger.info("服務已關閉")
 

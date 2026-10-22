@@ -104,18 +104,18 @@
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T033 [P] [US3] 整合測試 WS 推送與批次寫入於 `backend/app/tests/test_realtime.py`（連線收到每秒資料、is_anomaly 正確、批次寫入後可由 history 查得）per contracts/realtime.md
-- [ ] T034 [P] [US3] 單元測試異常閾值判斷於 `backend/app/tests/test_realtime.py`
+- [X] T033 [P] [US3] 整合測試 WS 推送與批次寫入於 `backend/app/tests/test_realtime.py`（連線收到每秒資料、is_anomaly 正確、批次寫入後可由 history 查得）per contracts/realtime.md
+- [X] T034 [P] [US3] 單元測試異常閾值判斷於 `backend/app/tests/test_realtime.py`
 
 ### Implementation for User Story 3
 
-- [ ] T035 [US3] 實作 `backend/app/models/realtime_data.py`（RealtimeData ORM：id PK；value float not null；category str(100) not null；is_anomaly bool not null default=false；generated_at datetime(UTC) not null index）per data-model.md
-- [ ] T036 [US3] 建立 Alembic 遷移（realtime_data 資料表）
-- [ ] T037 [P] [US3] 實作 `backend/app/schemas/realtime.py`（RealtimeMessage{value,category,is_anomaly,generated_at}、歷史查詢回應）
-- [ ] T038 [P] [US3] 實作 `backend/app/services/ws_manager.py`（連線集合管理、廣播、斷線移除）per research.md §5
-- [ ] T039 [US3] 實作 `backend/app/services/batch_writer.py`（記憶體緩衝 + 依 BATCH_SIZE 或 BATCH_INTERVAL 觸發批次 add_all+commit）per research.md §5、FR-015
-- [ ] T040 [US3] 實作 `backend/app/services/generator.py`（asyncio 每秒產生 value/category，is_anomaly=value>ANOMALY_THRESHOLD，推送 ws_manager + 送入 batch_writer）per FR-011/013
-- [ ] T041 [US3] 於 main.py lifespan 啟動 generator 背景任務；實作 `WS /ws/realtime`（連線驗證 token）與 `GET /api/realtime/history`（分頁/篩選）於 `backend/app/api/routers/realtime.py` per contracts/realtime.md
+- [X] T035 [US3] 實作 `backend/app/models/realtime_data.py`（RealtimeData ORM：id PK；value float not null；category str(100) not null；is_anomaly bool not null default=false；generated_at datetime(UTC) not null index）per data-model.md
+- [X] T036 [US3] 建立 Alembic 遷移（realtime_data 資料表）
+- [X] T037 [P] [US3] 實作 `backend/app/schemas/realtime.py`（RealtimeMessage{value,category,is_anomaly,generated_at}、歷史查詢回應）
+- [X] T038 [P] [US3] 實作 `backend/app/services/ws_manager.py`（連線集合管理、廣播、斷線移除）per research.md §5
+- [X] T039 [US3] 實作 `backend/app/services/batch_writer.py`（記憶體緩衝 + 依 BATCH_SIZE 或 BATCH_INTERVAL 觸發批次 add_all+commit）per research.md §5、FR-015
+- [X] T040 [US3] 實作 `backend/app/services/generator.py`（asyncio 每秒產生 value/category，is_anomaly=value>ANOMALY_THRESHOLD，推送 ws_manager + 送入 batch_writer）per FR-011/013
+- [X] T041 [US3] 於 main.py lifespan 啟動 generator 背景任務；實作 `WS /ws/realtime`（連線驗證 token）與 `GET /api/realtime/history`（分頁/篩選）於 `backend/app/api/routers/realtime.py` per contracts/realtime.md
 
 **Checkpoint**：US1 + US2 + US3（三個 P1）皆可獨立運作——核心後端完成
 

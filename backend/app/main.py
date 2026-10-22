@@ -10,6 +10,9 @@ from app.core.config import settings
 from app.core.logging import logger, setup_logging
 from app.db.session import engine, wait_for_db
 
+# 載入所有 ORM 模型以註冊 mapper（確保 relationship 字串名稱可解析）
+import app.models  # noqa: F401, E402
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

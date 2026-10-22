@@ -7,8 +7,8 @@ from app.core.config import settings
 from app.core.logging import logger, setup_logging
 from app.core.security import hash_password
 from app.db.session import AsyncSessionLocal
+from app.models import User  # 透過套件載入全部模型，確保 mapper registry 完整
 from app.models.enums import Role
-from app.models.user import User
 
 
 async def _seed_user(session, username: str, email: str, password: str, role: Role) -> None:

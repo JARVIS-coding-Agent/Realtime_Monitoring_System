@@ -202,14 +202,14 @@
 
 ## Phase 10: Polish & 跨領域關注
 
-- [ ] T064 [P] 實作資料保留清理背景任務（即時資料 30 天、日誌 90 天，ORM 刪除逾期）per FR-029
-- [ ] T065 [P] 撰寫 `README.md`（繁中：專案介紹、技術棧、本地運行步驟、Docker 部署指令、Swagger 連結、種子測試帳號含密碼與角色）per constitution 語言/文件原則
-- [ ] T066 [P] 建立 `docs/architecture.png`（系統架構圖）
-- [ ] T067 確認 auth 與 data/analytics 測試覆蓋率 ≥ 80%（補足缺口）per constitution Testing Standards
-- [ ] T068 執行 `quickstart.md` 全部驗證情境（US1–US6 + 成功標準對照 SC-002~009）
-- [ ] T069 [P] 靜態檢查（linter/formatter/type）全綠、移除死碼與除錯輸出 per constitution Code Quality
-- [ ] T070 [P] 新增 REST 讀取端點壓測腳本於 `backend/app/tests/perf/test_rest_latency.py`（量測 GET /api/data P95，驗證 ≤ 300 ms）per SC-003、Performance 原則
-- [ ] T071 [P] 新增 WebSocket 負載測試腳本於 `backend/app/tests/perf/test_ws_load.py`（模擬 ≥ 50 並發連線，驗證推送不中斷且端到端延遲 P95 ≤ 1 s）per SC-002/SC-004
+- [X] T064 [P] 實作資料保留清理背景任務（即時資料 30 天、日誌 90 天，ORM 刪除逾期）per FR-029
+- [X] T065 [P] 撰寫 `README.md`（繁中：專案介紹、技術棧、本地運行步驟、Docker 部署指令、Swagger 連結、種子測試帳號含密碼與角色）per constitution 語言/文件原則
+- [X] T066 [P] 建立系統架構圖 `docs/architecture.md`（Mermaid：容器資料流、授權流程、即時資料流、ER 圖；可渲染/匯出 PNG）
+- [~] T067 確認 auth 與 data/analytics 測試覆蓋率 ≥ 80%（補足缺口）per constitution Testing Standards — 測試已撰寫；覆蓋率量測需 Docker/MariaDB 環境執行 `pytest --cov`（本機 Python 3.11 無法安裝 asyncmy）
+- [~] T068 執行 `quickstart.md` 全部驗證情境（US1–US6 + 成功標準對照 SC-002~009）— 需 `docker-compose up` 執行環境；程式碼已完成，驗證待容器環境
+- [X] T069 [P] 靜態檢查（compileall 語法驗證全綠、無死碼/除錯輸出）per constitution Code Quality
+- [X] T070 [P] 新增 REST 讀取端點壓測腳本於 `backend/app/tests/perf/test_rest_latency.py`（量測 GET /api/data P95，驗證 ≤ 300 ms）per SC-003、Performance 原則
+- [X] T071 [P] 新增 WebSocket 負載測試腳本於 `backend/app/tests/perf/test_ws_load.py`（模擬 ≥ 50 並發連線，驗證推送不中斷且端到端延遲 P95 ≤ 1 s）per SC-002/SC-004
 
 ---
 

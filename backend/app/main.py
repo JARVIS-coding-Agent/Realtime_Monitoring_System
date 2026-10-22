@@ -22,10 +22,21 @@ async def lifespan(app: FastAPI):
         await generator.start()
     except Exception as exc:
         logger.error(f"背景任務啟動失敗：{exc}")
+    # 啟動保留清理背景任務
+    try:
+        from app.services.retention import retention_cleaner
+        await retention_cleaner.start()
+    except Exception as exc:
+        logger.error(f"保留清理啟動失敗：{exc}")
     yield
     try:
         from app.services.generator import generator
         await generator.stop()
+    except Exception:
+        pass
+    try:
+        from app.services.retention import retention_cleaner
+        await retention_cleaner.stop()
     except Exception:
         pass
     await engine.dispose()

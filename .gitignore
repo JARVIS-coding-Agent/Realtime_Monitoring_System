@@ -61,3 +61,7 @@ logs/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# === Spec Kit 工具腳手架（保留在本機，不納入 repo；保留 specs/ 與 PROJECT_PLAN.md）===
+.specify/
+.kiro/

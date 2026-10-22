@@ -34,15 +34,15 @@
 
 **⚠️ CRITICAL**：此階段完成前，任何使用者故事皆不可開始
 
-- [ ] T008 [P] 實作 `backend/app/core/config.py`（Pydantic Settings，從環境變數讀取所有設定，含時區 Asia/Taipei）
-- [ ] T009 [P] 實作 `backend/app/core/logging.py`（loguru 設定，統一日誌格式）
-- [ ] T010 實作 `backend/app/db/base.py`（SQLAlchemy Declarative Base）
-- [ ] T011 實作 `backend/app/db/session.py`（`create_async_engine` with bounded pool：pool_size/max_overflow/pool_pre_ping=True/pool_recycle；`AsyncSession` 依賴；暫時性連線錯誤指數退避重試）per research.md §2
-- [ ] T012 實作 `backend/app/main.py`（FastAPI app、掛載路由佔位、CORS、全域例外處理器不外洩堆疊、lifespan 佔位）
-- [ ] T013 實作 `backend/app/core/security.py`（bcrypt 密碼雜湊/驗證；JWT 簽發 HS256 含 sub/role/exp，有效期 60 分鐘可設定；JWT 解碼驗證）per contracts/auth.md
-- [ ] T014 初始化 Alembic（`backend/alembic.ini`、`backend/alembic/env.py` 綁定 async engine 與 Base metadata）
-- [ ] T015 實作 `backend/app/api/deps.py`（`get_db`、`get_current_user` 解析 Bearer token、`require_role(*roles)` 依賴）per plan.md
-- [ ] T016 設定 `GET /health` 於 main.py（回傳 `{status, db}`，db 輕量探測，降級回 degraded 不崩潰）per contracts/admin.md、SC-009
+- [X] T008 [P] 實作 `backend/app/core/config.py`（Pydantic Settings，從環境變數讀取所有設定，含時區 Asia/Taipei）
+- [X] T009 [P] 實作 `backend/app/core/logging.py`（loguru 設定，統一日誌格式）
+- [X] T010 實作 `backend/app/db/base.py`（SQLAlchemy Declarative Base）
+- [X] T011 實作 `backend/app/db/session.py`（`create_async_engine` with bounded pool：pool_size/max_overflow/pool_pre_ping=True/pool_recycle；`AsyncSession` 依賴；暫時性連線錯誤指數退避重試）per research.md §2
+- [X] T012 實作 `backend/app/main.py`（FastAPI app、掛載路由佔位、CORS、全域例外處理器不外洩堆疊、lifespan 佔位）
+- [X] T013 實作 `backend/app/core/security.py`（bcrypt 密碼雜湊/驗證；JWT 簽發 HS256 含 sub/role/exp，有效期 60 分鐘可設定；JWT 解碼驗證）per contracts/auth.md
+- [X] T014 初始化 Alembic（`backend/alembic.ini`、`backend/alembic/env.py` 綁定 async engine 與 Base metadata）
+- [X] T015 實作 `backend/app/api/deps.py`（`get_db`、`get_current_user` 解析 Bearer token、`require_role(*roles)` 依賴）per plan.md
+- [X] T016 設定 `GET /health` 於 main.py（回傳 `{status, db}`，db 輕量探測，降級回 degraded 不崩潰）per contracts/admin.md、SC-009
 
 **Checkpoint**：基礎就緒，使用者故事可開始
 

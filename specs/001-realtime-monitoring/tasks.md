@@ -81,16 +81,16 @@
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T026 [P] [US2] 契約測試 data CRUD 於 `backend/app/tests/test_data.py`（建立 201、Viewer 建立 403、列表分頁/篩選/排序、非擁有者 PUT/DELETE 403、擁有者/Admin 200）per contracts/data.md
-- [ ] T027 [P] [US2] 單元測試擁有者權限規則於 `backend/app/tests/test_data.py`
+- [X] T026 [P] [US2] 契約測試 data CRUD 於 `backend/app/tests/test_data.py`（建立 201、Viewer 建立 403、列表分頁/篩選/排序、非擁有者 PUT/DELETE 403、擁有者/Admin 200）per contracts/data.md
+- [X] T027 [P] [US2] 單元測試擁有者權限規則於 `backend/app/tests/test_data.py`
 
 ### Implementation for User Story 2
 
-- [ ] T028 [US2] 實作 `backend/app/models/data_record.py`（DataRecord ORM：id PK；title str(200) not null；value float not null；category str(100) not null index；timestamp datetime(UTC) not null index；owner_id FK→user.id not null index；created_at not null default=now；updated_at not null default=now onupdate=now）per data-model.md
-- [ ] T029 [US2] 建立 Alembic 遷移（data_records 資料表）
-- [ ] T030 [P] [US2] 實作 `backend/app/schemas/data_record.py`（DataRecordCreate、DataRecordUpdate、DataRecordOut、分頁回應 {items,total,page,page_size}）per contracts/data.md
-- [ ] T031 [US2] 實作 `backend/app/api/routers/data.py`（GET /api/data 分頁/篩選/排序；POST 201 Viewer 403；GET/{id}；PUT/{id} 擁有者或 Admin 否則 403，最後寫入者勝出；DELETE/{id} 204）掛載至 main.py per contracts/data.md、FR-007/008
-- [ ] T032 [US2] 加入 data 操作的驗證、錯誤處理與系統日誌
+- [X] T028 [US2] 實作 `backend/app/models/data_record.py`（DataRecord ORM：id PK；title str(200) not null；value float not null；category str(100) not null index；timestamp datetime(UTC) not null index；owner_id FK→user.id not null index；created_at not null default=now；updated_at not null default=now onupdate=now）per data-model.md
+- [X] T029 [US2] 建立 Alembic 遷移（data_records 資料表）
+- [X] T030 [P] [US2] 實作 `backend/app/schemas/data_record.py`（DataRecordCreate、DataRecordUpdate、DataRecordOut、分頁回應 {items,total,page,page_size}）per contracts/data.md
+- [X] T031 [US2] 實作 `backend/app/api/routers/data.py`（GET /api/data 分頁/篩選/排序；POST 201 Viewer 403；GET/{id}；PUT/{id} 擁有者或 Admin 否則 403，最後寫入者勝出；DELETE/{id} 204）掛載至 main.py per contracts/data.md、FR-007/008
+- [X] T032 [US2] 加入 data 操作的驗證、錯誤處理與系統日誌
 
 **Checkpoint**：US1 + US2 皆可獨立運作
 

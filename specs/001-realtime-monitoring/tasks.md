@@ -56,18 +56,18 @@
 
 ### Tests for User Story 1 ⚠️（先寫、先失敗）
 
-- [ ] T017 [P] [US1] 契約測試 auth 端點於 `backend/app/tests/test_auth.py`（register 409 重複、login 401 統一訊息、me 401 無效 token）per contracts/auth.md
-- [ ] T018 [P] [US1] 單元測試 security（密碼雜湊/驗證、JWT 簽發/過期驗證）於 `backend/app/tests/test_auth.py`
+- [X] T017 [P] [US1] 契約測試 auth 端點於 `backend/app/tests/test_auth.py`（register 409 重複、login 401 統一訊息、me 401 無效 token）per contracts/auth.md
+- [X] T018 [P] [US1] 單元測試 security（密碼雜湊/驗證、JWT 簽發/過期驗證）於 `backend/app/tests/test_auth.py`
 
 ### Implementation for User Story 1
 
-- [ ] T019 [US1] 實作 `backend/app/models/user.py`（User ORM：id PK；username str(50) unique not null index；email str(255) unique not null index；hashed_password str(255) not null；role Enum(admin/user/viewer) not null default=user；is_active bool not null default=true；created_at datetime(UTC) not null default=now）per data-model.md
-- [ ] T020 [US1] 建立 Alembic 遷移（users 資料表）`backend/alembic/versions/`
-- [ ] T021 [P] [US1] 實作 `backend/app/schemas/auth.py`（LoginRequest、TokenResponse{access_token,token_type,role}）per contracts/auth.md
-- [ ] T022 [P] [US1] 實作 `backend/app/schemas/user.py`（UserCreate{username,email,password>=8}、UserOut{id,username,email,role,is_active,created_at}）
-- [ ] T023 [US1] 實作 `backend/app/api/routers/auth.py`（POST /api/auth/register 409 重複〔FR-001〕；POST /api/auth/login 401 統一訊息〔FR-002〕；GET /api/auth/me 回傳目前使用者〔FR-005〕）掛載至 main.py per contracts/auth.md
-- [ ] T024 [US1] 實作 `backend/app/db/init_db.py`（種子三帳號 admin/user/viewer，密碼由環境變數，雜湊保存）per data-model.md
-- [ ] T025 [US1] 為 auth 操作加入系統日誌與錯誤處理（登入成功/失敗記錄，不外洩細節）
+- [X] T019 [US1] 實作 `backend/app/models/user.py`（User ORM：id PK；username str(50) unique not null index；email str(255) unique not null index；hashed_password str(255) not null；role Enum(admin/user/viewer) not null default=user；is_active bool not null default=true；created_at datetime(UTC) not null default=now）per data-model.md
+- [X] T020 [US1] 建立 Alembic 遷移（users 資料表）`backend/alembic/versions/`
+- [X] T021 [P] [US1] 實作 `backend/app/schemas/auth.py`（LoginRequest、TokenResponse{access_token,token_type,role}）per contracts/auth.md
+- [X] T022 [P] [US1] 實作 `backend/app/schemas/user.py`（UserCreate{username,email,password>=8}、UserOut{id,username,email,role,is_active,created_at}）
+- [X] T023 [US1] 實作 `backend/app/api/routers/auth.py`（POST /api/auth/register 409 重複〔FR-001〕；POST /api/auth/login 401 統一訊息〔FR-002〕；GET /api/auth/me 回傳目前使用者〔FR-005〕）掛載至 main.py per contracts/auth.md
+- [X] T024 [US1] 實作 `backend/app/db/init_db.py`（種子三帳號 admin/user/viewer，密碼由環境變數，雜湊保存）per data-model.md
+- [X] T025 [US1] 為 auth 操作加入系統日誌與錯誤處理（登入成功/失敗記錄，不外洩細節）
 
 **Checkpoint**：US1 可獨立運作——登入授權為後續所有故事之基礎（MVP）
 

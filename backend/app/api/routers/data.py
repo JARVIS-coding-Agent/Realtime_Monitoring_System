@@ -1,9 +1,9 @@
 """資料管理路由：CRUD + 分頁/篩選/排序，擁有者或 Admin 方可改刪。"""
-from datetime import datetime
-
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.base import utcnow
 
 from app.api.deps import get_current_user, get_session, require_role
 from app.core.logging import logger
@@ -71,7 +71,7 @@ async def create_record(
         title=payload.title,
         value=payload.value,
         category=payload.category,
-        timestamp=payload.timestamp or datetime.utcnow(),
+        timestamp=payload.timestamp or utcnow(),
         owner_id=current.id,
     )
     session.add(record)

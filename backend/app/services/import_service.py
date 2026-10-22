@@ -1,7 +1,7 @@
 """批量導入服務：解析 CSV/JSON、驗證、批次寫入，回報成功與失敗。"""
 import io
 import json
-from datetime import datetime
+from app.db.base import utcnow
 
 import pandas as pd
 from pydantic import ValidationError
@@ -68,7 +68,7 @@ async def import_records(
                 title=payload.title,
                 value=payload.value,
                 category=payload.category,
-                timestamp=payload.timestamp or datetime.utcnow(),
+                timestamp=payload.timestamp or utcnow(),
                 owner_id=owner_id,
             )
         )

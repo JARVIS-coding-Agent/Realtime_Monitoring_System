@@ -69,3 +69,7 @@ desktop.ini
 # === 本機暫存 ===
 .docker_up.log
 .docker_up.err
+e2e_verify.py
+e2e_result.txt
+tok.txt
+token.json

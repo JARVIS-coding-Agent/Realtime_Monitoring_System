@@ -132,3 +132,58 @@ async def test_viewer_cannot_create(client, session_factory):
         "/api/data", json={"title": "x", "value": 1.0, "category": "cpu"}, headers=_auth(token)
     )
     assert resp.status_code == 403
+
+
+# === US5 批量導入 ===
+
+async def test_import_csv_success(client):
+    token = await _register(client, "importer")
+    csv = b"title,value,category\nCPU,10.5,cpu\nMEM,20.0,memory\n"
+    resp = await client.post(
+        "/api/data/import",
+        files={"file": ("data.csv", csv, "text/csv")},
+        headers=_auth(token),
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["success_count"] == 2
+    assert body["failed_count"] == 0
+
+
+async def test_import_partial_errors(client):
+    token = await _register(client, "importer2")
+    # 第二列 value 非數字 → 應失敗並回報
+    csv = b"title,value,category\nOK,10.5,cpu\nBAD,notnum,mem\n"
+    resp = await client.post(
+        "/api/data/import",
+        files={"file": ("data.csv", csv, "text/csv")},
+        headers=_auth(token),
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["success_count"] == 1
+    assert body["failed_count"] == 1
+    assert body["errors"][0]["row"] == 2
+
+
+async def test_import_viewer_forbidden(client, session_factory):
+    from sqlalchemy import select
+    from app.models.enums import Role
+    from app.models.user import User
+
+    await _register(client, "viewer_imp")
+    async with session_factory() as s:
+        user = await s.scalar(select(User).where(User.username == "viewer_imp"))
+        user.role = Role.viewer
+        await s.commit()
+    login = await client.post(
+        "/api/auth/login", data={"username": "viewer_imp", "password": "Passw0rd!"}
+    )
+    token = login.json()["access_token"]
+    csv = b"title,value,category\nCPU,10.5,cpu\n"
+    resp = await client.post(
+        "/api/data/import",
+        files={"file": ("data.csv", csv, "text/csv")},
+        headers=_auth(token),
+    )
+    assert resp.status_code == 403

@@ -149,13 +149,13 @@
 
 ### Tests for User Story 5 ⚠️
 
-- [ ] T046 [P] [US5] 整合測試 import 於 `backend/app/tests/test_data.py`（正確檔成功數、部分錯誤回報、超過上限 400、Viewer 403）per contracts/data.md
+- [X] T046 [P] [US5] 整合測試 import 於 `backend/app/tests/test_data.py`（正確檔成功數、部分錯誤回報、超過上限 400、Viewer 403）per contracts/data.md
 
 ### Implementation for User Story 5
 
-- [ ] T047 [US5] 實作 `backend/app/services/import_service.py`（檢查 10 MB/10,000 筆上限；pandas 解析 CSV/JSON；逐列 Pydantic 驗證；正確列批次寫入、錯誤列收集）per research.md §7、FR-010
-- [ ] T048 [US5] 於 `backend/app/api/routers/data.py` 新增 POST /api/data/import（multipart；回報 {success_count,failed_count,errors}；Viewer 403）per contracts/data.md
-- [ ] T049 [P] [US5] 建立 `docs/sample_data.csv`（含標題/數值/分類/時間戳的測試資料範例，供導入與交付用）
+- [X] T047 [US5] 實作 `backend/app/services/import_service.py`（檢查 10 MB/10,000 筆上限；pandas 解析 CSV/JSON；逐列 Pydantic 驗證；正確列批次寫入、錯誤列收集）per research.md §7、FR-010
+- [X] T048 [US5] 於 `backend/app/api/routers/data.py` 新增 POST /api/data/import（multipart；回報 {success_count,failed_count,errors}；Viewer 403）per contracts/data.md
+- [X] T049 [P] [US5] 建立 `docs/sample_data.csv`（含標題/數值/分類/時間戳的測試資料範例，供導入與交付用）
 
 **Checkpoint**：US1–US5 皆可獨立運作
 

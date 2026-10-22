@@ -1,7 +1,7 @@
 """資料管理路由：CRUD + 分頁/篩選/排序，擁有者或 Admin 方可改刪。"""
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,6 +16,7 @@ from app.schemas.data_record import (
     DataRecordPage,
     DataRecordUpdate,
 )
+from app.services import import_service
 
 router = APIRouter()
 
@@ -78,6 +79,26 @@ async def create_record(
     await session.refresh(record)
     logger.info(f"使用者 {current.username} 建立資料 {record.id}")
     return record
+
+
+@router.post("/import")
+async def import_data(
+    file: UploadFile = File(...),
+    session: AsyncSession = Depends(get_session),
+    current: User = Depends(require_role(Role.admin, Role.user)),
+) -> dict:
+    """批量導入 CSV/JSON（Admin/User；Viewer 403）。回報成功/失敗筆數與每列原因。"""
+    content = await file.read()
+    try:
+        result = await import_service.import_records(
+            session, content, file.filename or "", current.id
+        )
+    except import_service.ImportError_ as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+    logger.info(
+        f"使用者 {current.username} 批量導入：成功 {result['success_count']} 失敗 {result['failed_count']}"
+    )
+    return result
 
 
 @router.get("/{record_id}", response_model=DataRecordOut)

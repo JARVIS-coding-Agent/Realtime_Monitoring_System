@@ -129,13 +129,13 @@
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T042 [P] [US4] 契約/整合測試 analytics 於 `backend/app/tests/test_analytics.py`（stats 正確、aggregate 分類、trend 範圍與空狀態、export 回傳 xlsx）per contracts/analytics.md
+- [X] T042 [P] [US4] 契約/整合測試 analytics 於 `backend/app/tests/test_analytics.py`（stats 正確、aggregate 分類、trend 範圍與空狀態、export 回傳 xlsx）per contracts/analytics.md
 
 ### Implementation for User Story 4
 
-- [ ] T043 [P] [US4] 實作 `backend/app/schemas/analytics.py`（StatsOut、AggregateItem、TrendItem）per contracts/analytics.md
-- [ ] T044 [US4] 實作 `backend/app/services/analytics_service.py`（以 ORM func.count/sum/avg/min/max、group_by、時間範圍 where；趨勢分桶）per research.md §6、FR-016/017/018
-- [ ] T045 [US4] 實作 `backend/app/api/routers/analytics.py`（GET /stats /aggregate /trend /export；export 以 pandas+openpyxl 產生 xlsx StreamingResponse）掛載至 main.py per contracts/analytics.md、FR-019
+- [X] T043 [P] [US4] 實作 `backend/app/schemas/analytics.py`（StatsOut、AggregateItem、TrendItem）per contracts/analytics.md
+- [X] T044 [US4] 實作 `backend/app/services/analytics_service.py`（以 ORM func.count/sum/avg/min/max、group_by、時間範圍 where；趨勢分桶）per research.md §6、FR-016/017/018
+- [X] T045 [US4] 實作 `backend/app/api/routers/analytics.py`（GET /stats /aggregate /trend /export；export 以 pandas+openpyxl 產生 xlsx StreamingResponse）掛載至 main.py per contracts/analytics.md、FR-019
 
 **Checkpoint**：US1–US4 皆可獨立運作
 

@@ -20,13 +20,13 @@
 
 **目的**：專案初始化與基本結構
 
-- [ ] T001 建立專案資料夾結構（`backend/app/{core,db,models,schemas,api/routers,services,tests}`、`frontend/app/pages`、`docs/`）per plan.md
-- [ ] T002 建立 `backend/requirements.txt`（釘選版本：fastapi, uvicorn[standard], pydantic>=2, pydantic-settings, sqlalchemy[asyncio]>=2, asyncmy, alembic, python-jose[cryptography], passlib[bcrypt], python-multipart, pandas, openpyxl, loguru, pytest, pytest-asyncio, httpx）
-- [ ] T003 [P] 建立 `frontend/requirements.txt`（釘選版本：streamlit, httpx, websocket-client, plotly, pandas）
-- [ ] T004 [P] 建立 `.env.example`（DB 連線、JWT_SECRET、ACCESS_TOKEN_EXPIRE_MINUTES=60、ANOMALY_THRESHOLD、BATCH_SIZE、BATCH_INTERVAL_SECONDS、REALTIME_RETENTION_DAYS=30、LOG_RETENTION_DAYS=90、種子帳號密碼；不含真實機密）
-- [ ] T005 [P] 建立 `backend/Dockerfile`（多階段：builder 裝依賴 + runtime 精簡）
-- [ ] T006 [P] 建立 `frontend/Dockerfile`（多階段）
-- [ ] T007 建立 `docker-compose.yml`（三服務 backend/frontend/db；db healthcheck；backend depends_on db healthy；MariaDB 11.7 + `db_data` volume；環境變數由 .env 注入；啟動時 backend 先跑 Alembic 遷移 + 種子）
+- [X] T001 建立專案資料夾結構（`backend/app/{core,db,models,schemas,api/routers,services,tests}`、`frontend/app/pages`、`docs/`）per plan.md
+- [X] T002 建立 `backend/requirements.txt`（釘選版本：fastapi, uvicorn[standard], pydantic>=2, pydantic-settings, sqlalchemy[asyncio]>=2, asyncmy, alembic, python-jose[cryptography], passlib[bcrypt], python-multipart, pandas, openpyxl, loguru, pytest, pytest-asyncio, httpx）
+- [X] T003 [P] 建立 `frontend/requirements.txt`（釘選版本：streamlit, httpx, websocket-client, plotly, pandas）
+- [X] T004 [P] 建立 `.env.example`（DB 連線、JWT_SECRET、ACCESS_TOKEN_EXPIRE_MINUTES=60、ANOMALY_THRESHOLD、BATCH_SIZE、BATCH_INTERVAL_SECONDS、REALTIME_RETENTION_DAYS=30、LOG_RETENTION_DAYS=90、種子帳號密碼；不含真實機密）
+- [X] T005 [P] 建立 `backend/Dockerfile`（多階段：builder 裝依賴 + runtime 精簡）
+- [X] T006 [P] 建立 `frontend/Dockerfile`（多階段）
+- [X] T007 建立 `docker-compose.yml`（三服務 backend/frontend/db；db healthcheck；backend depends_on db healthy；MariaDB 11.7 + `db_data` volume；環境變數由 .env 注入；啟動時 backend 先跑 Alembic 遷移 + 種子）
 
 ---
 

@@ -1,0 +1,63 @@
+# === 機密 / 環境變數 ===
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虛擬環境
+.venv/
+venv/
+env/
+ENV/
+
+# === 測試 / 覆蓋率 ===
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.cache/
+
+# === 資料庫 / 資料 ===
+*.sqlite3
+*.db
+db_data/
+
+# === 日誌 ===
+*.log
+logs/
+
+# === IDE / 編輯器 ===
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# === OS ===
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,7 +1,10 @@
 """FastAPI 應用入口。"""
 from contextlib import asynccontextmanager
 
+import math
+
 from fastapi import FastAPI, Request, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -97,10 +100,6 @@ async def validation_exception_handler(
     直接 dump 會丟 ValueError 使 422 退化成 500。此處遞迴把非有限 float 轉成字串
     表示，確保回出乾淨、可序列化的 422。
     """
-    import math
-
-    from fastapi.encoders import jsonable_encoder
-
     def _sanitize(obj):
         if isinstance(obj, float) and not math.isfinite(obj):
             return str(obj)  # "nan" / "inf" / "-inf"

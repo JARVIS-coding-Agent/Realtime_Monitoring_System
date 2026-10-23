@@ -133,6 +133,16 @@ pytest -q
 TEST_DATABASE_URL="mysql+asyncmy://user:pass@localhost:3306/test_db" pytest -q
 ```
 
+### 端到端驗證
+
+啟動完整系統後（`docker compose up -d`），可用內附腳本驗證主要流程與權限控制：
+
+```bash
+python scripts/e2e_verify.py
+```
+
+涵蓋登入、資料 CRUD、分析、系統管理、即時歷史，以及權限拒絕（Viewer 建立 403、越權存取 403、未授權 401）。全部通過回傳離開碼 0。
+
 ## 開發方法論
 
 本專案採 Spec-Driven Development（規格驅動開發），完整的規格、計畫、資料模型、API 契約與任務拆解見 [`specs/`](specs/) 目錄，開發歷程依使用者故事分階段提交。

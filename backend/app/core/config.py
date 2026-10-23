@@ -3,6 +3,13 @@ from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# 不得於 production 使用的範本佔位值（啟動時偵測到即 fail-fast）
+_PLACEHOLDER_VALUES = {
+    "change-me-db-password",
+    "change-me-to-a-long-random-secret",
+    "change-me-root-password",
+}
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
@@ -76,6 +83,27 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def validate_secrets(s: "Settings | None" = None) -> None:
+    """啟動時驗證敏感設定：未設定或仍為範本佔位值則 fail-fast。
+
+    於服務實際啟動時呼叫（main.py lifespan），避免影響測試 import。
+    """
+    s = s or get_settings()
+    errors: list[str] = []
+
+    if not s.jwt_secret or s.jwt_secret in _PLACEHOLDER_VALUES:
+        errors.append("JWT_SECRET 未設定或仍為範本佔位值，請以 `openssl rand -hex 32` 產生安全值")
+    if len(s.jwt_secret) < 16:
+        errors.append("JWT_SECRET 長度過短（至少 16 字元）")
+    if not s.db_password or s.db_password in _PLACEHOLDER_VALUES:
+        errors.append("DB_PASSWORD 未設定或仍為範本佔位值")
+
+    if errors:
+        raise RuntimeError(
+            "啟動前置安全檢查失敗，服務拒絕啟動：\n  - " + "\n  - ".join(errors)
+        )
 
 
 settings = get_settings()

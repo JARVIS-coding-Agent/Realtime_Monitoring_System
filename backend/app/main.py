@@ -18,6 +18,9 @@ import app.models  # noqa: F401, E402
 async def lifespan(app: FastAPI):
     setup_logging()
     logger.info("服務啟動中…")
+    # 啟動前置安全檢查：secret 未設定或仍為佔位值則拒絕啟動
+    from app.core.config import validate_secrets
+    validate_secrets()
     await wait_for_db()
     # 啟動即時資料生成器背景任務
     try:

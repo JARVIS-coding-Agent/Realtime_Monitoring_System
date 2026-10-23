@@ -6,7 +6,14 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 def _validate_finite(v: float | None) -> float | None:
-    """拒絕 NaN / Infinity（H4）：非有限數會污染統計與 Excel 匯出。"""
+    """拒絕 NaN / Infinity（H4）：非有限數會污染統計與 Excel 匯出。
+
+    防護場景：
+    - CSV import：pandas 會把 "NaN" 字串轉成 float('nan')，此時由本 validator 擋下。
+    - JSON API：Python 的 json 解析（starlette 底層）預設接受非標準字面值
+      NaN/Infinity，這類輸入會通過 parse 進到 Pydantic，一樣由本 validator 擋下
+      並回 422（而非在 parse 階段就被拒）。
+    """
     if v is not None and not math.isfinite(v):
         raise ValueError("value 必須為有限數（不接受 NaN 或 Infinity）")
     return v

@@ -1,7 +1,11 @@
 """US4 資料分析測試：stats、aggregate、export、trend（trend 需 MariaDB）。"""
 import os
+from datetime import datetime
 
 import pytest
+from sqlalchemy import update
+
+from app.models.data_record import DataRecord
 
 pytestmark = pytest.mark.asyncio
 
@@ -61,9 +65,29 @@ async def test_analytics_requires_auth(client):
     assert resp.status_code == 401
 
 
-@pytest.mark.skipif(not _IS_MARIADB, reason="trend 使用 date_format，需 MariaDB")
 async def test_trend(client, session_factory):
+    # trend 已跨方言（MariaDB date_format / SQLite strftime），兩種 DB 皆執行（issue #4）
     headers = await _setup_data(client, session_factory)
+    # 把 4 筆 timestamp 固定到同一天，避免資料剛好跨午夜導致分成兩桶（deterministic）
+    fixed_day = datetime(2025, 1, 1, 12, 0, 0)
+    async with session_factory() as s:
+        await s.execute(update(DataRecord).values(timestamp=fixed_day))
+        await s.commit()
     resp = await client.get("/api/analytics/trend?interval=day", headers=headers)
     assert resp.status_code == 200
-    assert isinstance(resp.json(), list)
+    body = resp.json()
+    assert isinstance(body, list)
+    # 4 筆同日資料 → day 分桶應聚為 1 桶、count=4
+    assert len(body) == 1
+    assert body[0]["count"] == 4
+
+
+async def test_trend_empty_range_returns_empty(client, session_factory):
+    # 時間範圍無資料應回空陣列（空狀態，非錯誤）
+    headers = await _setup_data(client, session_factory)
+    resp = await client.get(
+        "/api/analytics/trend?interval=day&start=1990-01-01T00:00:00&end=1990-01-02T00:00:00",
+        headers=headers,
+    )
+    assert resp.status_code == 200
+    assert resp.json() == []

@@ -68,9 +68,19 @@ async def compute_trend(
     end: datetime | None = None,
     interval: str = "day",
 ) -> list[dict]:
-    """趨勢分桶（day 或 hour），以 DB 聚合。"""
+    """趨勢分桶（day 或 hour），以 DB 聚合。
+
+    跨方言：MariaDB 用 date_format、SQLite 用 strftime，使 trend 在正式環境與
+    測試環境皆可執行（issue #4：避免 analytics 路徑在測試環境 0 覆蓋）。
+    """
+    # get_bind() 保證回傳 Engine/Connection（未綁定會 raise UnboundExecutionError），
+    # 不像 session.bind 可能為 None；用它判斷方言較穩健（FRIDAY review）。
+    dialect = session.get_bind().dialect.name
     fmt = "%Y-%m-%d %H:00:00" if interval == "hour" else "%Y-%m-%d"
-    bucket = func.date_format(DataRecord.timestamp, fmt).label("bucket")
+    if dialect == "sqlite":
+        bucket = func.strftime(fmt, DataRecord.timestamp).label("bucket")
+    else:  # mysql / mariadb
+        bucket = func.date_format(DataRecord.timestamp, fmt).label("bucket")
     stmt = select(
         bucket,
         func.coalesce(func.avg(cast(DataRecord.value, Float)), 0.0),

@@ -69,6 +69,9 @@ class BatchWriter:
             await asyncio.sleep(settings.batch_interval_seconds)
             try:
                 async with self._lock:
+                    # 二次時間檢查（非冗餘）：sleep 期間 add() 可能已因達筆數門檻 flush 並
+                    # 更新 _last_flush，此時距上次 flush 未滿 interval，不應重複觸發。
+                    # 僅在「buffer 有資料」且「確實已過 interval」時才 flush。
                     if self._buffer and (
                         time.monotonic() - self._last_flush >= settings.batch_interval_seconds
                     ):

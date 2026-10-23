@@ -21,12 +21,15 @@ async def lifespan(app: FastAPI):
     # 啟動前置安全檢查：secret 未設定或仍為佔位值則拒絕啟動
     validate_secrets()
     await wait_for_db()
-    # 啟動批次寫入器的獨立 flush loop（須在 generator 之前備妥）
+    # 啟動批次寫入器的獨立 flush loop（須在 generator 之前備妥）。
+    # batch writer 是資料完整性的核心：若 timer flush loop 起不來，時間觸發會失效、
+    # 退化回 issue #3 的資料遺失狀態。因此啟動失敗直接中斷服務，不靜默繼續。
+    from app.services.batch_writer import batch_writer
     try:
-        from app.services.batch_writer import batch_writer
         await batch_writer.start()
     except Exception as exc:
-        logger.error(f"批次寫入器啟動失敗：{exc}")
+        logger.error(f"批次寫入器啟動失敗，拒絕啟動服務（避免資料靜默遺失）：{exc}")
+        raise
     # 啟動即時資料生成器背景任務
     try:
         from app.services.generator import generator

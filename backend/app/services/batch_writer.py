@@ -56,6 +56,14 @@ class BatchWriter:
                 await session.commit()
             logger.debug(f"批次寫入 {len(pending)} 筆即時資料")
             return True
+        except asyncio.CancelledError:
+            # 關鍵（issue #3）：flush 進行中（如卡在 commit）被 stop() 取消時，
+            # pending 已移出 buffer。若放任 CancelledError 向上傳播，這批資料會蒸發。
+            # 先退回 buffer 前置，再重新 raise 以尊重取消語意——後續 stop() 的
+            # 最終 flush() 會補寫這批退回的資料。
+            self._buffer[:0] = pending
+            logger.warning(f"flush 進行中被取消，{len(pending)} 筆退回緩衝待最終 flush")
+            raise
         except Exception as exc:
             # 失敗不丟棄：退回 buffer 前置，下輪重試
             self._buffer[:0] = pending
@@ -92,8 +100,11 @@ class BatchWriter:
             try:
                 await self._task
             except asyncio.CancelledError:
+                # 若取消時 flush loop 正卡在 commit，_flush_locked 的 CancelledError
+                # 路徑已把該批 pending 退回 buffer，下方最終 flush() 會補寫。
                 pass
-        await self.flush()  # 關閉前最終 flush
+        # 關閉前最終 flush：寫出 buffer 殘留 + 被取消而退回的批次，確保資料落地。
+        await self.flush()
         logger.info("批次寫入器已停止")
 
 

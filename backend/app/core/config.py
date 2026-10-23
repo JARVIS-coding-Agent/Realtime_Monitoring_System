@@ -19,13 +19,17 @@ class Settings(BaseSettings):
     db_port: int = 3306
     db_name: str = "monitoring"
     db_user: str = "monitor"
-    db_password: str = "change-me-db-password"
+    # 敏感值：不提供可用的 hardcoded 預設（issue #1）。
+    # 預設為空字串僅為避免 import 期崩潰，啟動時 validate_secrets() 會 fail-fast。
+    db_password: str = ""
     db_pool_size: int = 10
     db_max_overflow: int = 20
     db_pool_recycle: int = 1800
 
     # JWT / 安全
-    jwt_secret: str = "change-me-to-a-long-random-secret"
+    # 敏感值：不提供可用的 hardcoded 預設（issue #1）。
+    # 預設為空字串僅為避免 import 期崩潰，啟動時 validate_secrets() 會 fail-fast。
+    jwt_secret: str = ""
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
 
@@ -93,10 +97,12 @@ def validate_secrets(s: "Settings | None" = None) -> None:
     s = s or get_settings()
     errors: list[str] = []
 
+    # JWT_SECRET：先判斷未設定／佔位值，通過後才檢查長度，避免空值重複報錯
     if not s.jwt_secret or s.jwt_secret in _PLACEHOLDER_VALUES:
         errors.append("JWT_SECRET 未設定或仍為範本佔位值，請以 `openssl rand -hex 32` 產生安全值")
-    if len(s.jwt_secret) < 16:
+    elif len(s.jwt_secret) < 16:
         errors.append("JWT_SECRET 長度過短（至少 16 字元）")
+
     if not s.db_password or s.db_password in _PLACEHOLDER_VALUES:
         errors.append("DB_PASSWORD 未設定或仍為範本佔位值")
 

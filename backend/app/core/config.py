@@ -3,6 +3,13 @@ from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# 不得於 production 使用的範本佔位值（啟動時偵測到即 fail-fast）
+_PLACEHOLDER_VALUES = {
+    "change-me-db-password",
+    "change-me-to-a-long-random-secret",
+    "change-me-root-password",
+}
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
@@ -12,13 +19,17 @@ class Settings(BaseSettings):
     db_port: int = 3306
     db_name: str = "monitoring"
     db_user: str = "monitor"
-    db_password: str = "change-me-db-password"
+    # 敏感值：不提供可用的 hardcoded 預設（issue #1）。
+    # 預設為空字串僅為避免 import 期崩潰，啟動時 validate_secrets() 會 fail-fast。
+    db_password: str = ""
     db_pool_size: int = 10
     db_max_overflow: int = 20
     db_pool_recycle: int = 1800
 
     # JWT / 安全
-    jwt_secret: str = "change-me-to-a-long-random-secret"
+    # 敏感值：不提供可用的 hardcoded 預設（issue #1）。
+    # 預設為空字串僅為避免 import 期崩潰，啟動時 validate_secrets() 會 fail-fast。
+    jwt_secret: str = ""
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
 
@@ -76,6 +87,32 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def validate_secrets(s: "Settings | None" = None) -> None:
+    """啟動時驗證敏感設定：未設定或仍為範本佔位值則 fail-fast。
+
+    於服務實際啟動時呼叫（main.py lifespan），避免影響測試 import。
+    """
+    s = s or get_settings()
+    errors: list[str] = []
+
+    # JWT_SECRET：先判斷未設定／佔位值，通過後才檢查長度，避免空值重複報錯。
+    # 以 strip() 後的長度判斷，防止純空白字串（如 16 個空格）繞過長度檢查。
+    jwt_secret = (s.jwt_secret or "").strip()
+    if not jwt_secret or jwt_secret in _PLACEHOLDER_VALUES:
+        errors.append("JWT_SECRET 未設定或仍為範本佔位值，請以 `openssl rand -hex 32` 產生安全值")
+    elif len(jwt_secret) < 16:
+        errors.append("JWT_SECRET 長度過短（至少 16 字元）")
+
+    db_password = (s.db_password or "").strip()
+    if not db_password or db_password in _PLACEHOLDER_VALUES:
+        errors.append("DB_PASSWORD 未設定或仍為範本佔位值")
+
+    if errors:
+        raise RuntimeError(
+            "啟動前置安全檢查失敗，服務拒絕啟動：\n  - " + "\n  - ".join(errors)
+        )
 
 
 settings = get_settings()

@@ -202,7 +202,8 @@ async def test_create_rejects_non_finite_via_api(client, bad):
     這也驗證 FastAPI 回傳 422 時 error detail 能被正常序列化，不會因 input
     含非有限數而意外噴 500。
     """
-    token = await _register(client, f"nan_{bad.strip('-').lower()}")
+    # 帳號名需唯一：strip('-') 會讓 Infinity 與 -Infinity 碰撞，改用 replace 保留區別
+    token = await _register(client, f"nan_{bad.replace('-', 'neg').lower()}")
     # 手動組非標準 JSON（httpx 的 json= 等同 Python json.dumps(allow_nan=True)）
     body = f'{{"title": "x", "value": {bad}, "category": "cpu"}}'
     resp = await client.post(

@@ -55,3 +55,33 @@ def test_defaults_have_no_usable_secret():
     fields = Settings.model_fields
     assert fields["jwt_secret"].default == ""
     assert fields["db_password"].default == ""
+
+
+def test_whitespace_only_jwt_secret_fails():
+    # 純空白字串（長度足夠）不得通過驗證
+    with pytest.raises(RuntimeError, match="JWT_SECRET"):
+        validate_secrets(_settings(jwt_secret=" " * 32))
+
+
+def test_whitespace_only_db_password_fails():
+    with pytest.raises(RuntimeError, match="DB_PASSWORD"):
+        validate_secrets(_settings(db_password="   "))
+
+
+def test_startup_entrypoint_fails_on_bad_secret(monkeypatch):
+    """entrypoint 等效 smoke test：secret 不合格時 validate_startup 回非零碼，
+    確保在任何 DB 操作（migration / init_db）之前就 fail-fast。"""
+    from app.core import validate_startup
+
+    def _raise(_s=None):
+        raise RuntimeError("JWT_SECRET 未設定或仍為範本佔位值")
+
+    monkeypatch.setattr(validate_startup, "validate_secrets", _raise)
+    assert validate_startup.main() == 1
+
+
+def test_startup_entrypoint_passes_on_valid_secret(monkeypatch):
+    from app.core import validate_startup
+
+    monkeypatch.setattr(validate_startup, "validate_secrets", lambda _s=None: None)
+    assert validate_startup.main() == 0

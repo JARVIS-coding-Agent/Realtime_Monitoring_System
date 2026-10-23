@@ -97,13 +97,16 @@ def validate_secrets(s: "Settings | None" = None) -> None:
     s = s or get_settings()
     errors: list[str] = []
 
-    # JWT_SECRET：先判斷未設定／佔位值，通過後才檢查長度，避免空值重複報錯
-    if not s.jwt_secret or s.jwt_secret in _PLACEHOLDER_VALUES:
+    # JWT_SECRET：先判斷未設定／佔位值，通過後才檢查長度，避免空值重複報錯。
+    # 以 strip() 後的長度判斷，防止純空白字串（如 16 個空格）繞過長度檢查。
+    jwt_secret = (s.jwt_secret or "").strip()
+    if not jwt_secret or jwt_secret in _PLACEHOLDER_VALUES:
         errors.append("JWT_SECRET 未設定或仍為範本佔位值，請以 `openssl rand -hex 32` 產生安全值")
-    elif len(s.jwt_secret) < 16:
+    elif len(jwt_secret) < 16:
         errors.append("JWT_SECRET 長度過短（至少 16 字元）")
 
-    if not s.db_password or s.db_password in _PLACEHOLDER_VALUES:
+    db_password = (s.db_password or "").strip()
+    if not db_password or db_password in _PLACEHOLDER_VALUES:
         errors.append("DB_PASSWORD 未設定或仍為範本佔位值")
 
     if errors:

@@ -33,5 +33,6 @@ COPY . .
 
 EXPOSE 8000
 
-# 進入點：跑 Alembic 遷移 + 種子後啟動 uvicorn
-CMD ["sh", "-c", "alembic upgrade head && python -m app.db.init_db && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# 進入點：secret 前置檢查 → Alembic 遷移 + 種子 → 啟動 uvicorn
+# 安全檢查放在最前面，缺失/佔位 secret 時在任何 DB 操作前即 fail-fast（issue #1）
+CMD ["sh", "-c", "python -m app.core.validate_startup && alembic upgrade head && python -m app.db.init_db && uvicorn app.main:app --host 0.0.0.0 --port 8000"]

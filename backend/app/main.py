@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
-from app.core.config import settings
+from app.core.config import settings, validate_secrets
 from app.core.logging import logger, setup_logging
 from app.db.session import engine, wait_for_db
 
@@ -19,7 +19,6 @@ async def lifespan(app: FastAPI):
     setup_logging()
     logger.info("服務啟動中…")
     # 啟動前置安全檢查：secret 未設定或仍為佔位值則拒絕啟動
-    from app.core.config import validate_secrets
     validate_secrets()
     await wait_for_db()
     # 啟動即時資料生成器背景任務

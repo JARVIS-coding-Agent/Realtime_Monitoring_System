@@ -34,7 +34,7 @@ def test_short_jwt_secret_fails():
 
 
 def test_empty_jwt_secret_fails():
-    with pytest.raises(RuntimeError):
+    with pytest.raises(RuntimeError, match="JWT_SECRET"):
         validate_secrets(_settings(jwt_secret=""))
 
 

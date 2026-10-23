@@ -107,6 +107,8 @@ async def get_record(
     session: AsyncSession = Depends(get_session),
     current: User = Depends(get_current_user),
 ) -> DataRecord:
+    # 設計決策（issue #2）：資料記錄採「團隊共享」可見性，所有登入者皆可讀取
+    # 任一筆（與列表行為一致）；僅寫入限 owner/Admin。故此處刻意不做 owner 檢查。
     record = await session.get(DataRecord, record_id)
     if record is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="資料不存在")

@@ -187,3 +187,45 @@ async def test_import_viewer_forbidden(client, session_factory):
         headers=_auth(token),
     )
     assert resp.status_code == 403
+
+
+
+# === H4：NaN / Infinity 輸入驗證 ===
+
+
+@pytest.mark.parametrize("bad", ["NaN", "Infinity", "-Infinity"])
+async def test_create_rejects_non_finite_via_api(client, bad):
+    """真實 API regression：裸 NaN/Infinity 經 POST /api/data 應回 422。
+
+    Python 的 json 解析（starlette 底層）預設接受非標準字面值 NaN/Infinity，
+    因此這類輸入會通過 JSON parse 進到 Pydantic，由 value 的 field_validator 擋下。
+    這也驗證 FastAPI 回傳 422 時 error detail 能被正常序列化，不會因 input
+    含非有限數而意外噴 500。
+    """
+    # 帳號名需唯一：strip('-') 會讓 Infinity 與 -Infinity 碰撞，改用 replace 保留區別
+    token = await _register(client, f"nan_{bad.replace('-', 'neg').lower()}")
+    # 手動組非標準 JSON（httpx 的 json= 等同 Python json.dumps(allow_nan=True)）
+    body = f'{{"title": "x", "value": {bad}, "category": "cpu"}}'
+    resp = await client.post(
+        "/api/data",
+        content=body,
+        headers={**_auth(token), "Content-Type": "application/json"},
+    )
+    assert resp.status_code == 422, resp.text
+    # error detail 必須可被 JSON 序列化（回應成功解析即證明未噴 500）
+    assert "detail" in resp.json()
+
+
+async def test_import_rejects_nan_row(client):
+    token = await _register(client, "nanimporter")
+    # CSV 內含 NaN 值的列應被驗證擋下（計入 failed）
+    csv = b"title,value,category\nOK,10.5,cpu\nBAD,NaN,cpu\n"
+    resp = await client.post(
+        "/api/data/import",
+        files={"file": ("data.csv", csv, "text/csv")},
+        headers=_auth(token),
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["success_count"] == 1
+    assert body["failed_count"] == 1

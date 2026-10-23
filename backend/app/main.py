@@ -1,7 +1,11 @@
 """FastAPI 應用入口。"""
 from contextlib import asynccontextmanager
 
+import math
+
 from fastapi import FastAPI, Request, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
@@ -82,6 +86,36 @@ app.add_middleware(
 from app.core.middleware import SystemLogMiddleware  # noqa: E402
 
 app.add_middleware(SystemLogMiddleware)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    """清洗驗證錯誤明細中的非有限 float，避免回 422 時噴 500。
+
+    starlette 底層 json 解析預設接受非標準字面值 NaN/Infinity，這類輸入會通過
+    parse 進到 Pydantic 並被 value validator 擋下。但 Pydantic 會把原始 input
+    （float('nan') 等）放進錯誤明細，而 JSONResponse 以 allow_nan=False 序列化，
+    直接 dump 會丟 ValueError 使 422 退化成 500。此處遞迴把非有限 float 轉成字串
+    表示，確保回出乾淨、可序列化的 422。
+    """
+    def _sanitize(obj):
+        if isinstance(obj, float) and not math.isfinite(obj):
+            return str(obj)  # "nan" / "inf" / "-inf"
+        if isinstance(obj, dict):
+            return {k: _sanitize(v) for k, v in obj.items()}
+        if isinstance(obj, (list, tuple)):
+            return [_sanitize(v) for v in obj]
+        return obj
+
+    # 先用 jsonable_encoder 把 ctx.error 等不可序列化物件轉成可序列化型別，
+    # 但它會原樣保留 float('nan')（即原始 500 的來源），故再跑一次 _sanitize。
+    encoded = jsonable_encoder(exc.errors())
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"detail": _sanitize(encoded)},
+    )
 
 
 @app.exception_handler(Exception)

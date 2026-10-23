@@ -93,7 +93,7 @@ async def import_data(
         result = await import_service.import_records(
             session, content, file.filename or "", current.id
         )
-    except import_service.ImportError_ as exc:
+    except import_service.ImportValidationError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     logger.info(
         f"使用者 {current.username} 批量導入：成功 {result['success_count']} 失敗 {result['failed_count']}"

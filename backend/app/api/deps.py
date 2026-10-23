@@ -20,11 +20,6 @@ _CREDENTIALS_EXC = HTTPException(
 )
 
 
-async def get_db() -> AsyncSession:
-    async for session in get_session():
-        return session
-
-
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
     session: AsyncSession = Depends(get_session),

@@ -26,3 +26,5 @@ class RealtimeDataOut(BaseModel):
 class RealtimeHistoryPage(BaseModel):
     items: list[RealtimeDataOut]
     total: int
+    page: int
+    page_size: int

@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      mariadb:
+        image: mariadb:11.7
+        env:
+          MARIADB_DATABASE: test_db
+          MARIADB_USER: test_user
+          MARIADB_PASSWORD: test_pass
+          MARIADB_ROOT_PASSWORD: root_pass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      # 測試對齊 production 方言（issue #4）：對 MariaDB 執行完整套件
+      TEST_DATABASE_URL: "mysql+asyncmy://test_user:test_pass@127.0.0.1:3306/test_db"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Wait for MariaDB
+        run: |
+          for i in $(seq 1 30); do
+            if mysqladmin ping -h 127.0.0.1 -P 3306 -utest_user -ptest_pass --silent; then
+              echo "MariaDB ready"; break
+            fi
+            echo "waiting for mariadb ($i)"; sleep 2
+          done
+
+      - name: Run tests against MariaDB
+        working-directory: backend
+        run: pytest -q

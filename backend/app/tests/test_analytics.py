@@ -61,9 +61,24 @@ async def test_analytics_requires_auth(client):
     assert resp.status_code == 401
 
 
-@pytest.mark.skipif(not _IS_MARIADB, reason="trend 使用 date_format，需 MariaDB")
 async def test_trend(client, session_factory):
+    # trend 已跨方言（MariaDB date_format / SQLite strftime），兩種 DB 皆執行（issue #4）
     headers = await _setup_data(client, session_factory)
     resp = await client.get("/api/analytics/trend?interval=day", headers=headers)
     assert resp.status_code == 200
-    assert isinstance(resp.json(), list)
+    body = resp.json()
+    assert isinstance(body, list)
+    # _setup_data 建立 4 筆同日資料 → day 分桶應聚為 1 桶、count=4
+    assert len(body) == 1
+    assert body[0]["count"] == 4
+
+
+async def test_trend_empty_range_returns_empty(client, session_factory):
+    # 時間範圍無資料應回空陣列（空狀態，非錯誤）
+    headers = await _setup_data(client, session_factory)
+    resp = await client.get(
+        "/api/analytics/trend?interval=day&start=1990-01-01T00:00:00&end=1990-01-02T00:00:00",
+        headers=headers,
+    )
+    assert resp.status_code == 200
+    assert resp.json() == []

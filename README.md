@@ -129,11 +129,15 @@ cd backend
 pytest -q
 ```
 
-整合測試預設使用 in-memory SQLite 快速驗證邏輯；若要對 MariaDB 執行（貼近正式環境），設定 `TEST_DATABASE_URL`，例如：
+測試預設使用 in-memory SQLite 快速驗證邏輯層；多數測試（含 analytics `trend`）已**跨方言**（MariaDB 用 `date_format`、SQLite 用 `strftime`），兩種資料庫皆可執行。
+
+若要對 MariaDB 執行（貼近正式環境方言），設定 `TEST_DATABASE_URL`：
 
 ```bash
 TEST_DATABASE_URL="mysql+asyncmy://user:pass@localhost:3306/test_db" pytest -q
 ```
+
+**持續整合（CI）**：`.github/workflows/ci.yml` 會在 push／PR 時啟動 MariaDB 11.7 service，對 **MariaDB** 執行完整測試套件，確保測試環境與 production 方言一致（避免 MariaDB 專屬 SQL 僅在上線才爆）。僅能在 MariaDB 執行的測試可標記 `@pytest.mark.requires_mariadb`（非 MariaDB 環境自動 skip）。
 
 ### 端到端驗證
 

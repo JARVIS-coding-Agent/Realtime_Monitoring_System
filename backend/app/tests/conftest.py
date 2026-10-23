@@ -1,7 +1,11 @@
 """pytest 共用 fixture。
 
-整合測試預設對獨立 MariaDB 測試資料庫執行（見 TEST_DATABASE_URL）；
-若未提供，退回使用 in-memory aiosqlite 以便本機快速驗證邏輯層。
+測試資料庫（issue #4）：
+- 預設使用 in-memory aiosqlite，供本機快速驗證邏輯層。
+- 設定環境變數 `TEST_DATABASE_URL` 可對 MariaDB 測試資料庫執行（貼近 production 方言）；
+  CI（.github/workflows/ci.yml）即以 MariaDB 跑完整套件。
+- 多數測試已跨方言（含 analytics trend），兩種 DB 皆可執行；僅限 MariaDB 的測試
+  可標記 `@pytest.mark.requires_mariadb`，非 MariaDB 環境會自動 skip。
 """
 import asyncio
 import os
@@ -14,6 +18,22 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from app.db.base import Base
 
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+_IS_MARIADB = TEST_DATABASE_URL.startswith(("mysql", "mariadb"))
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "requires_mariadb: 僅能在 MariaDB 測試資料庫執行的測試"
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    if _IS_MARIADB:
+        return
+    skip = pytest.mark.skip(reason="需 MariaDB（設定 TEST_DATABASE_URL 後執行）")
+    for item in items:
+        if "requires_mariadb" in item.keywords:
+            item.add_marker(skip)
 
 
 @pytest.fixture(scope="session")

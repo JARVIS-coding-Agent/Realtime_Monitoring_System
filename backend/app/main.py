@@ -21,6 +21,12 @@ async def lifespan(app: FastAPI):
     # 啟動前置安全檢查：secret 未設定或仍為佔位值則拒絕啟動
     validate_secrets()
     await wait_for_db()
+    # 啟動批次寫入器的獨立 flush loop（須在 generator 之前備妥）
+    try:
+        from app.services.batch_writer import batch_writer
+        await batch_writer.start()
+    except Exception as exc:
+        logger.error(f"批次寫入器啟動失敗：{exc}")
     # 啟動即時資料生成器背景任務
     try:
         from app.services.generator import generator
@@ -37,6 +43,12 @@ async def lifespan(app: FastAPI):
     try:
         from app.services.generator import generator
         await generator.stop()
+    except Exception:
+        pass
+    # generator 停止後才關閉批次寫入器（確保最終資料落地）
+    try:
+        from app.services.batch_writer import batch_writer
+        await batch_writer.stop()
     except Exception:
         pass
     try:

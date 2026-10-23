@@ -56,10 +56,84 @@ async def test_history_requires_auth(client):
     assert resp.status_code == 401
 
 
-async def test_batch_writer_buffer_flush():
-    """直接測 BatchWriter 緩衝與 flush 行為（不實際寫 DB，驗證 buffer 清空）。"""
-    from app.services.batch_writer import BatchWriter
+async def test_batchwriter_threshold_flush(session_factory, monkeypatch):
+    """達筆數門檻即觸發 flush，資料寫入 DB。"""
+    import app.services.batch_writer as bw_mod
+    from app.models.realtime_data import RealtimeData
+    from app.db.base import utcnow
+    from sqlalchemy import func, select
 
-    bw = BatchWriter()
-    # 以小於門檻的筆數加入，buffer 應累積（除非時間觸發）
-    assert len(bw._buffer) == 0
+    monkeypatch.setattr(bw_mod, "AsyncSessionLocal", session_factory)
+    monkeypatch.setattr(bw_mod.settings, "batch_size", 3)
+    bw = bw_mod.BatchWriter()
+
+    for _ in range(3):
+        await bw.add({"value": 1.0, "category": "cpu", "is_anomaly": False, "generated_at": utcnow()})
+
+    assert len(bw._buffer) == 0  # 達門檻已 flush
+    async with session_factory() as s:
+        total = await s.scalar(select(func.count()).select_from(RealtimeData))
+    assert total == 3
+
+
+async def test_batchwriter_timer_flush(session_factory, monkeypatch):
+    """低流量下，獨立 timer loop 仍會 flush 未達門檻的資料。"""
+    import app.services.batch_writer as bw_mod
+    from app.models.realtime_data import RealtimeData
+    from app.db.base import utcnow
+    from sqlalchemy import func, select
+
+    monkeypatch.setattr(bw_mod, "AsyncSessionLocal", session_factory)
+    monkeypatch.setattr(bw_mod.settings, "batch_size", 100)  # 不會達門檻
+    monkeypatch.setattr(bw_mod.settings, "batch_interval_seconds", 0.1)
+    bw = bw_mod.BatchWriter()
+    await bw.start()
+    try:
+        await bw.add({"value": 1.0, "category": "cpu", "is_anomaly": False, "generated_at": utcnow()})
+        import asyncio
+        await asyncio.sleep(0.3)  # 等 timer loop 觸發
+    finally:
+        await bw.stop()
+
+    async with session_factory() as s:
+        total = await s.scalar(select(func.count()).select_from(RealtimeData))
+    assert total == 1  # timer 已寫入
+
+
+async def test_batchwriter_flush_failure_requeues(monkeypatch):
+    """flush 失敗時資料退回 buffer，不靜默遺失。"""
+    import app.services.batch_writer as bw_mod
+    from app.db.base import utcnow
+
+    class _FailingSession:
+        async def __aenter__(self):
+            raise RuntimeError("DB down")
+        async def __aexit__(self, *a):
+            return False
+
+    monkeypatch.setattr(bw_mod, "AsyncSessionLocal", lambda: _FailingSession())
+    monkeypatch.setattr(bw_mod.settings, "batch_size", 1)
+    bw = bw_mod.BatchWriter()
+    await bw.add({"value": 1.0, "category": "cpu", "is_anomaly": False, "generated_at": utcnow()})
+    # flush 失敗 → 資料應仍在 buffer（退回），而非遺失
+    assert len(bw._buffer) == 1
+
+
+async def test_batchwriter_shutdown_flush(session_factory, monkeypatch):
+    """stop() 時最終 flush，buffer 殘留資料落地。"""
+    import app.services.batch_writer as bw_mod
+    from app.models.realtime_data import RealtimeData
+    from app.db.base import utcnow
+    from sqlalchemy import func, select
+
+    monkeypatch.setattr(bw_mod, "AsyncSessionLocal", session_factory)
+    monkeypatch.setattr(bw_mod.settings, "batch_size", 100)
+    monkeypatch.setattr(bw_mod.settings, "batch_interval_seconds", 60)  # timer 不會觸發
+    bw = bw_mod.BatchWriter()
+    await bw.start()
+    await bw.add({"value": 1.0, "category": "cpu", "is_anomaly": False, "generated_at": utcnow()})
+    await bw.stop()  # 應最終 flush
+
+    async with session_factory() as s:
+        total = await s.scalar(select(func.count()).select_from(RealtimeData))
+    assert total == 1

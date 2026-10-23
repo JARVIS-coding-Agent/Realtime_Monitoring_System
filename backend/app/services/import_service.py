@@ -14,7 +14,7 @@ from app.schemas.data_record import DataRecordCreate
 _REQUIRED = {"title", "value", "category"}
 
 
-class ImportError_(Exception):
+class ImportValidationError(Exception):
     """導入前置檢查錯誤（大小/格式）。"""
 
 
@@ -24,7 +24,7 @@ def _parse(content: bytes, filename: str) -> list[dict]:
     if name.endswith(".json"):
         data = json.loads(content.decode("utf-8"))
         if not isinstance(data, list):
-            raise ImportError_("JSON 須為物件陣列")
+            raise ImportValidationError("JSON 須為物件陣列")
         return data
     # 預設視為 CSV
     df = pd.read_csv(io.BytesIO(content))
@@ -36,19 +36,19 @@ async def import_records(
 ) -> dict:
     """執行導入。回傳 {success_count, failed_count, errors:[{row,error}]}。"""
     if len(content) > settings.import_max_bytes:
-        raise ImportError_(f"檔案超過大小上限（{settings.import_max_bytes} bytes）")
+        raise ImportValidationError(f"檔案超過大小上限（{settings.import_max_bytes} bytes）")
     if not content.strip():
-        raise ImportError_("檔案為空")
+        raise ImportValidationError("檔案為空")
 
     try:
         rows = _parse(content, filename)
-    except ImportError_:
+    except ImportValidationError:
         raise
     except Exception as exc:
-        raise ImportError_(f"檔案格式錯誤：{exc}")
+        raise ImportValidationError(f"檔案格式錯誤：{exc}")
 
     if len(rows) > settings.import_max_rows:
-        raise ImportError_(f"筆數超過上限（{settings.import_max_rows}）")
+        raise ImportValidationError(f"筆數超過上限（{settings.import_max_rows}）")
 
     success: list[DataRecord] = []
     errors: list[dict] = []

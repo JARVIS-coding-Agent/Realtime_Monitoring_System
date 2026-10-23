@@ -187,3 +187,33 @@ async def test_import_viewer_forbidden(client, session_factory):
         headers=_auth(token),
     )
     assert resp.status_code == 403
+
+
+
+# === H4：NaN / Infinity 輸入驗證 ===
+
+async def test_create_rejects_nan(client):
+    token = await _register(client, "nanuser")
+    # JSON 不允許裸 NaN，用 Infinity 字串無法；以 Python float 經 json 無法表達，
+    # 故直接送會被 FastAPI/JSON 解析擋下或由 validator 擋。此處驗證 schema validator。
+    from app.schemas.data_record import DataRecordCreate
+    import pytest as _pytest
+    with _pytest.raises(Exception):
+        DataRecordCreate(title="x", value=float("nan"), category="cpu")
+    with _pytest.raises(Exception):
+        DataRecordCreate(title="x", value=float("inf"), category="cpu")
+
+
+async def test_import_rejects_nan_row(client):
+    token = await _register(client, "nanimporter")
+    # CSV 內含 NaN 值的列應被驗證擋下（計入 failed）
+    csv = b"title,value,category\nOK,10.5,cpu\nBAD,NaN,cpu\n"
+    resp = await client.post(
+        "/api/data/import",
+        files={"file": ("data.csv", csv, "text/csv")},
+        headers=_auth(token),
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["success_count"] == 1
+    assert body["failed_count"] == 1

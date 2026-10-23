@@ -68,4 +68,4 @@ async def history(
             .limit(page_size)
         )
     ).all()
-    return RealtimeHistoryPage(items=list(rows), total=total)
+    return RealtimeHistoryPage(items=list(rows), total=total, page=page, page_size=page_size)

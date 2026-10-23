@@ -114,7 +114,9 @@ class BatchWriter:
                 await self._task
             except Exception as exc:
                 logger.error(f"等待 flush loop 結束時發生例外：{exc}")
-        # 關閉前最終 flush：寫出 loop 結束後 buffer 仍殘留的資料，確保落地。
+        # 防禦性落地：正常情況 _run() 最後一輪（not self._running 分支）已清空 buffer，
+        # 此 flush 通常為空。保留作為 safety net，涵蓋 loop 未啟動、或最後一輪 flush
+        # 失敗退回等邊角情形，確保停止時盡力把殘留資料寫出。
         await self.flush()
         logger.info("批次寫入器已停止")
 

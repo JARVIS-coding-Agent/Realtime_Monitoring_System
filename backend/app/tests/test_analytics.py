@@ -1,7 +1,11 @@
 """US4 資料分析測試：stats、aggregate、export、trend（trend 需 MariaDB）。"""
 import os
+from datetime import datetime
 
 import pytest
+from sqlalchemy import update
+
+from app.models.data_record import DataRecord
 
 pytestmark = pytest.mark.asyncio
 
@@ -64,11 +68,16 @@ async def test_analytics_requires_auth(client):
 async def test_trend(client, session_factory):
     # trend 已跨方言（MariaDB date_format / SQLite strftime），兩種 DB 皆執行（issue #4）
     headers = await _setup_data(client, session_factory)
+    # 把 4 筆 timestamp 固定到同一天，避免資料剛好跨午夜導致分成兩桶（deterministic）
+    fixed_day = datetime(2025, 1, 1, 12, 0, 0)
+    async with session_factory() as s:
+        await s.execute(update(DataRecord).values(timestamp=fixed_day))
+        await s.commit()
     resp = await client.get("/api/analytics/trend?interval=day", headers=headers)
     assert resp.status_code == 200
     body = resp.json()
     assert isinstance(body, list)
-    # _setup_data 建立 4 筆同日資料 → day 分桶應聚為 1 桶、count=4
+    # 4 筆同日資料 → day 分桶應聚為 1 桶、count=4
     assert len(body) == 1
     assert body[0]["count"] == 4
 

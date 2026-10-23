@@ -6,6 +6,9 @@
 - `add()` 僅在達筆數門檻時即時 flush（降低延遲）。
 - flush 失敗時資料退回 buffer（前置），下輪重試而非靜默遺失；buffer 有上限，
   超過時丟棄最舊並告警（輕量 dead-letter，避免記憶體無限成長）。
+- 優雅停止：stop() 不取消正在執行的 flush（避免 commit 已套用卻 requeue 造成
+  重複寫入——RealtimeData 無唯一鍵，無法去重）。改用 event 喚醒 sleep 中的 loop，
+  讓 in-flight flush 自然完成後才結束，再做最終 flush。兼顧「不遺失」與「不重複」。
 """
 import asyncio
 import time
@@ -26,6 +29,8 @@ class BatchWriter:
         self._last_flush = time.monotonic()
         self._task: asyncio.Task | None = None
         self._running = False
+        # 用於喚醒 sleep 中的 flush loop（stop 時提早觸發最終迴圈，取代 cancel）
+        self._wakeup = asyncio.Event()
 
     async def add(self, item: dict) -> None:
         """加入一筆資料；達筆數門檻時即時 flush（時間觸發由背景 loop 負責）。"""
@@ -56,14 +61,6 @@ class BatchWriter:
                 await session.commit()
             logger.debug(f"批次寫入 {len(pending)} 筆即時資料")
             return True
-        except asyncio.CancelledError:
-            # 關鍵（issue #3）：flush 進行中（如卡在 commit）被 stop() 取消時，
-            # pending 已移出 buffer。若放任 CancelledError 向上傳播，這批資料會蒸發。
-            # 先退回 buffer 前置，再重新 raise 以尊重取消語意——後續 stop() 的
-            # 最終 flush() 會補寫這批退回的資料。
-            self._buffer[:0] = pending
-            logger.warning(f"flush 進行中被取消，{len(pending)} 筆退回緩衝待最終 flush")
-            raise
         except Exception as exc:
             # 失敗不丟棄：退回 buffer 前置，下輪重試
             self._buffer[:0] = pending
@@ -71,18 +68,32 @@ class BatchWriter:
             return False
 
     async def _run(self) -> None:
-        """獨立背景 loop：定期依時間間隔觸發 flush。"""
+        """獨立背景 loop：依時間間隔觸發 flush；stop 時經 _wakeup 提早喚醒並結束。
+
+        以 wait_for(_wakeup, timeout=interval) 取代純 sleep：
+        - 逾時（interval 到）→ 正常定期 flush。
+        - 被 _wakeup 喚醒（stop 觸發）→ 立即做最後一次 flush 後結束，不必空等整個 interval。
+        不使用 task.cancel()：若取消正好打在 commit 已套用、client 未收回應之際，
+        requeue 會導致最終 flush 重複寫入（無唯一鍵無法去重）。故改讓 in-flight flush
+        自然完成。
+        """
         logger.info("批次寫入器 flush loop 啟動")
         while self._running:
-            await asyncio.sleep(settings.batch_interval_seconds)
+            try:
+                await asyncio.wait_for(self._wakeup.wait(), timeout=settings.batch_interval_seconds)
+            except asyncio.TimeoutError:
+                pass  # interval 到，正常觸發
+            self._wakeup.clear()
             try:
                 async with self._lock:
-                    # 二次時間檢查（非冗餘）：sleep 期間 add() 可能已因達筆數門檻 flush 並
-                    # 更新 _last_flush，此時距上次 flush 未滿 interval，不應重複觸發。
-                    # 僅在「buffer 有資料」且「確實已過 interval」時才 flush。
-                    if self._buffer and (
-                        time.monotonic() - self._last_flush >= settings.batch_interval_seconds
-                    ):
+                    # 停止中：無條件 flush 殘留；運行中：達時間間隔才 flush。
+                    # （二次時間檢查非冗餘：_wakeup 期間 add() 可能剛因筆數門檻 flush 並
+                    #  更新 _last_flush，此時距上次 flush 未滿 interval，不應重複觸發。）
+                    should_flush = self._buffer and (
+                        not self._running
+                        or time.monotonic() - self._last_flush >= settings.batch_interval_seconds
+                    )
+                    if should_flush:
                         await self._flush_locked()
             except Exception as exc:
                 logger.error(f"批次 flush loop 發生例外（繼續運行）：{exc}")
@@ -91,19 +102,19 @@ class BatchWriter:
         if self._running:
             return
         self._running = True
+        self._wakeup.clear()
         self._task = asyncio.create_task(self._run())
 
     async def stop(self) -> None:
         self._running = False
+        self._wakeup.set()  # 喚醒 sleep 中的 loop，使其跑完最後一輪後結束
         if self._task:
-            self._task.cancel()
             try:
+                # 等 loop 自然收尾：若正有 in-flight flush，會等它完成而非中途取消。
                 await self._task
-            except asyncio.CancelledError:
-                # 若取消時 flush loop 正卡在 commit，_flush_locked 的 CancelledError
-                # 路徑已把該批 pending 退回 buffer，下方最終 flush() 會補寫。
-                pass
-        # 關閉前最終 flush：寫出 buffer 殘留 + 被取消而退回的批次，確保資料落地。
+            except Exception as exc:
+                logger.error(f"等待 flush loop 結束時發生例外：{exc}")
+        # 關閉前最終 flush：寫出 loop 結束後 buffer 仍殘留的資料，確保落地。
         await self.flush()
         logger.info("批次寫入器已停止")
 

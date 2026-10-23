@@ -139,21 +139,23 @@ async def test_batchwriter_shutdown_flush(session_factory, monkeypatch):
     assert total == 1
 
 
-async def test_batchwriter_cancel_during_commit_no_loss(session_factory, monkeypatch):
-    """flush 正卡在 commit 時被 stop() 取消，資料不遺失，最終 flush 落地（issue #3 / ULTRON P1）。"""
+async def test_batchwriter_stop_during_commit_no_loss_no_dup(session_factory, monkeypatch):
+    """stop() 時若有 in-flight flush，應讓其自然完成：不遺失、不重複（issue #3 / ULTRON P1）。
+
+    新語義：stop 不取消正在執行的 flush（避免 commit 已套用卻 requeue 造成重複——
+    RealtimeData 無唯一鍵無法去重）。驗證 commit 只執行一次、DB 恰好 1 筆。
+    """
     import asyncio
     import app.services.batch_writer as bw_mod
     from app.models.realtime_data import RealtimeData
     from app.db.base import utcnow
     from sqlalchemy import func, select
 
-    first_commit_entered = asyncio.Event()
-    release_first_commit = asyncio.Event()
+    commit_entered = asyncio.Event()
     calls = {"n": 0}
 
     class _SlowCommitSession:
-        """首次 commit 卡住（模擬 in-flight），讓測試得以在 commit 中途觸發 stop/cancel；
-        後續 commit（最終 flush）委派真實 session 正常寫入。"""
+        """commit 有小延遲以模擬 in-flight；委派真實 session 實際寫入。"""
         def __init__(self):
             self._real_cm = session_factory()
             self._real = None
@@ -170,10 +172,8 @@ async def test_batchwriter_cancel_during_commit_no_loss(session_factory, monkeyp
 
         async def commit(self):
             calls["n"] += 1
-            if calls["n"] == 1:
-                first_commit_entered.set()
-                # 卡住直到被 cancel（release 事件在此測試不會被 set）
-                await release_first_commit.wait()
+            commit_entered.set()
+            await asyncio.sleep(0.2)  # 模擬 commit 耗時（in-flight 視窗）
             await self._real.commit()
 
     monkeypatch.setattr(bw_mod, "AsyncSessionLocal", lambda: _SlowCommitSession())
@@ -183,17 +183,41 @@ async def test_batchwriter_cancel_during_commit_no_loss(session_factory, monkeyp
     await bw.start()
     await bw.add({"value": 1.0, "category": "cpu", "is_anomaly": False, "generated_at": utcnow()})
 
-    # 等 timer loop 進到首次 commit 並卡住
-    await asyncio.wait_for(first_commit_entered.wait(), timeout=2.0)
-    # 此刻資料已移出 buffer、卡在 commit；呼叫 stop 觸發 cancel
+    # 等 timer loop 進到 commit（in-flight 中）
+    await asyncio.wait_for(commit_entered.wait(), timeout=2.0)
+    # 此刻 flush 正卡在 commit；stop 應等它自然跑完而非取消
     await bw.stop()
 
-    # 第二次 commit（最終 flush）應已把退回的資料寫入；DB 內資料不遺失
+    async with session_factory() as s:
+        total = await s.scalar(select(func.count()).select_from(RealtimeData))
+    assert total == 1           # 不遺失
+    assert calls["n"] == 1      # 不重複：in-flight commit 只跑一次，未被 requeue 重寫
+    assert len(bw._buffer) == 0
+
+
+async def test_batchwriter_timer_wakeup_on_stop_is_prompt(session_factory, monkeypatch):
+    """stop() 以 _wakeup 喚醒 sleep 中的 loop，不必空等整個 interval。"""
+    import asyncio
+    import time as _time
+    import app.services.batch_writer as bw_mod
+    from app.models.realtime_data import RealtimeData
+    from app.db.base import utcnow
+    from sqlalchemy import func, select
+
+    monkeypatch.setattr(bw_mod, "AsyncSessionLocal", session_factory)
+    monkeypatch.setattr(bw_mod.settings, "batch_size", 100)
+    monkeypatch.setattr(bw_mod.settings, "batch_interval_seconds", 30)  # 很長，若空等會超時
+    bw = bw_mod.BatchWriter()
+    await bw.start()
+    await bw.add({"value": 1.0, "category": "cpu", "is_anomaly": False, "generated_at": utcnow()})
+    t0 = _time.monotonic()
+    await bw.stop()
+    elapsed = _time.monotonic() - t0
+
+    assert elapsed < 5  # 遠小於 30s interval，證明是被喚醒而非等 timeout
     async with session_factory() as s:
         total = await s.scalar(select(func.count()).select_from(RealtimeData))
     assert total == 1
-    assert len(bw._buffer) == 0
-    assert calls["n"] >= 2  # 首次被取消 + 最終 flush 重寫
 
 
 async def test_batchwriter_requeue_then_retry_succeeds(session_factory, monkeypatch):

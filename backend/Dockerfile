@@ -15,6 +15,26 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip wheel --no-cache-dir --wheel-dir /wheels -r requirements.txt
 
+# 下載 Swagger UI 靜態資源，供執行時本地提供（不依賴外部 CDN）
+# 於 builder 階段下載一次；下載失敗不中斷 build（runtime 會 fallback 回 CDN）
+# 鎖定具體版本避免建置產物漂移（CDN 的 @5 會跟著 latest 跑）
+RUN python - <<'PY'
+import os, urllib.request
+os.makedirs("/assets", exist_ok=True)
+SWAGGER_UI_VERSION = "5.34.0"
+base = f"https://cdn.jsdelivr.net/npm/swagger-ui-dist@{SWAGGER_UI_VERSION}"
+files = {
+    "swagger-ui-bundle.js": f"{base}/swagger-ui-bundle.js",
+    "swagger-ui.css": f"{base}/swagger-ui.css",
+}
+for name, url in files.items():
+    try:
+        urllib.request.urlretrieve(url, f"/assets/{name}")
+        print("downloaded", name)
+    except Exception as exc:
+        print("WARN: failed to download", name, exc)
+PY
+
 # === runtime 階段：精簡映像 ===
 FROM python:3.12-slim AS runtime
 
@@ -30,6 +50,9 @@ RUN pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.t
     rm -rf /wheels
 
 COPY . .
+
+# 將 builder 下載的 Swagger UI / ReDoc 靜態資源放入 app/static（本地提供，免 CDN）
+COPY --from=builder /assets/ ./app/static/
 
 EXPOSE 8000
 

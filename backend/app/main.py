@@ -2,12 +2,15 @@
 from contextlib import asynccontextmanager
 
 import math
+import os
 
 from fastapi import FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app.core.config import settings, validate_secrets
@@ -72,7 +75,38 @@ app = FastAPI(
     description="FastAPI + WebSocket 即時監控後端（SQLAlchemy async ORM）",
     version="1.0.0",
     lifespan=lifespan,
+    # 關閉預設的 CDN 版 Swagger；改用本地靜態資源自訂（見下方 /docs）。
+    # ReDoc 非題目需求且與離線資源相容性不佳，故停用（redoc_url=None）。
+    docs_url=None,
+    redoc_url=None,
 )
+
+# 本地靜態資源：讓 Swagger UI 不依賴外部 CDN（離線/擋 CDN 環境也能開）
+_STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+# 僅在本地靜態資源「實際存在」時才用本地；否則回退 FastAPI 預設（CDN），
+# 兼顧 Docker（已下載靜態檔→本地）與本機非 Docker 開發（無靜態檔→CDN）。
+# 必須 JS 與 CSS 皆存在才算完整；任一缺少（例如 build 時 CSS 下載失敗）
+# 就整組回退 CDN，避免 /docs 引用到 404 的本地資源造成破版。
+_HAS_SWAGGER_ASSETS = os.path.isfile(
+    os.path.join(_STATIC_DIR, "swagger-ui-bundle.js")
+) and os.path.isfile(os.path.join(_STATIC_DIR, "swagger-ui.css"))
+
+if os.path.isdir(_STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
+
+
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    if _HAS_SWAGGER_ASSETS:
+        return get_swagger_ui_html(
+            openapi_url=app.openapi_url,
+            title=f"{app.title} - Swagger UI",
+            swagger_js_url="/static/swagger-ui-bundle.js",
+            swagger_css_url="/static/swagger-ui.css",
+        )
+    # fallback：無本地資源時用 FastAPI 預設 CDN 版
+    return get_swagger_ui_html(openapi_url=app.openapi_url, title=f"{app.title} - Swagger UI")
+
 
 app.add_middleware(
     CORSMiddleware,

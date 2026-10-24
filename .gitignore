@@ -72,3 +72,9 @@ desktop.ini
 e2e_result.txt
 tok.txt
 token.json
+
+# === Swagger 靜態資源（由 Docker build 下載，不進版控）===
+backend/app/static/*
+!backend/app/static/.gitkeep
+_r.html
+_d*.html

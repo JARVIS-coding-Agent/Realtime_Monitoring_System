@@ -87,7 +87,11 @@ from fastapi.staticfiles import StaticFiles  # noqa: E402
 _STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 # 僅在本地靜態資源「實際存在」時才用本地；否則回退 FastAPI 預設（CDN），
 # 兼顧 Docker（已下載靜態檔→本地）與本機非 Docker 開發（無靜態檔→CDN）。
-_HAS_SWAGGER_ASSETS = os.path.isfile(os.path.join(_STATIC_DIR, "swagger-ui-bundle.js"))
+# 必須 JS 與 CSS 皆存在才算完整；任一缺少（例如 build 時 CSS 下載失敗）
+# 就整組回退 CDN，避免 /docs 引用到 404 的本地資源造成破版。
+_HAS_SWAGGER_ASSETS = os.path.isfile(
+    os.path.join(_STATIC_DIR, "swagger-ui-bundle.js")
+) and os.path.isfile(os.path.join(_STATIC_DIR, "swagger-ui.css"))
 
 if os.path.isdir(_STATIC_DIR):
     app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")

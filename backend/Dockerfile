@@ -17,12 +17,15 @@ RUN pip install --upgrade pip && \
 
 # 下載 Swagger UI 靜態資源，供執行時本地提供（不依賴外部 CDN）
 # 於 builder 階段下載一次；下載失敗不中斷 build（runtime 會 fallback 回 CDN）
+# 鎖定具體版本避免建置產物漂移（CDN 的 @5 會跟著 latest 跑）
 RUN python - <<'PY'
 import os, urllib.request
 os.makedirs("/assets", exist_ok=True)
+SWAGGER_UI_VERSION = "5.34.0"
+base = f"https://cdn.jsdelivr.net/npm/swagger-ui-dist@{SWAGGER_UI_VERSION}"
 files = {
-    "swagger-ui-bundle.js": "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js",
-    "swagger-ui.css": "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css",
+    "swagger-ui-bundle.js": f"{base}/swagger-ui-bundle.js",
+    "swagger-ui.css": f"{base}/swagger-ui.css",
 }
 for name, url in files.items():
     try:

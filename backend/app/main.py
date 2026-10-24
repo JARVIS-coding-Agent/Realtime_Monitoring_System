@@ -2,12 +2,15 @@
 from contextlib import asynccontextmanager
 
 import math
+import os
 
 from fastapi import FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app.core.config import settings, validate_secrets
@@ -79,11 +82,6 @@ app = FastAPI(
 )
 
 # 本地靜態資源：讓 Swagger UI 不依賴外部 CDN（離線/擋 CDN 環境也能開）
-import os  # noqa: E402
-
-from fastapi.openapi.docs import get_swagger_ui_html  # noqa: E402
-from fastapi.staticfiles import StaticFiles  # noqa: E402
-
 _STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 # 僅在本地靜態資源「實際存在」時才用本地；否則回退 FastAPI 預設（CDN），
 # 兼顧 Docker（已下載靜態檔→本地）與本機非 Docker 開發（無靜態檔→CDN）。

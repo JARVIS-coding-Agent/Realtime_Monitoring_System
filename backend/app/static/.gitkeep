@@ -1,6 +1,6 @@
-# Swagger UI / ReDoc 靜態資源目錄
+# Swagger UI 靜態資源目錄
 #
-# 此目錄的實際檔案（swagger-ui-bundle.js、swagger-ui.css、redoc.standalone.js）
+# 此目錄的實際檔案（swagger-ui-bundle.js、swagger-ui.css）
 # 由 Docker build 階段自動下載（見 backend/Dockerfile），不納入版控。
 # 本地非 Docker 開發若需離線文件，可手動放入對應檔案；否則 FastAPI 預設
 # 行為（若 static 不存在，/docs 仍可用但改依賴 CDN）。
